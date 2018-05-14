@@ -1,0 +1,45 @@
+<input type="text" required="true" placeholder="Search" autofocus>
+<div id="suggestions"></div>
+
+<script type="text/javascript">
+  const letterInput = document.querySelector("input");
+  const suggestionEl = document.querySelector("div#suggestions");
+
+  function render(list) {
+    list.forEach(
+      bandName => {
+        const bandElem = document.createElement("p");
+        bandElem.textContent = bandName;
+        suggestionEl.appendChild(bandElem);
+      }
+    )
+  }
+
+  letterInput.addEventListener(
+    'input',
+    event => {
+      while (suggestionEl.firstChild) {
+          suggestionEl.firstChild.remove();
+      }
+      const text = letterInput.value;
+      if (text !== "") {
+        fetch(
+          '/search',
+          {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            method: 'POST',
+            credentials: 'same-origin',
+            body: JSON.stringify({ text }),
+          }
+        ).then(
+          res => res.json()
+        ).then(
+          json => render(json)
+        );
+      }
+    }
+  )
+</script>
