@@ -1,10 +1,13 @@
-<input type="text" required="true" placeholder="Search" autofocus>
+<input id="search" type="text" required="true" placeholder="Search" autofocus>
+<input id="add-song" type="text" required="true" placeholder="Add song">
 <div id="suggestions"></div>
 
 <script type="text/javascript">
-  const letterInput = document.querySelector("input");
+  // dom elements
+  const letterInput = document.querySelector("input#search");
+  const songInput = document.querySelector("input#add-song");
   const suggestionEl = document.querySelector("div#suggestions");
-
+  // helpers
   function render(list) {
     list.forEach(
       bandName => {
@@ -14,32 +17,55 @@
       }
     )
   }
-
+  function get_results() {
+    while (suggestionEl.firstChild) {
+        suggestionEl.firstChild.remove();
+    }
+    const query = letterInput.value;
+    fetch(
+      '/search',
+      {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        method: 'POST',
+        credentials: 'same-origin',
+        body: JSON.stringify({ query }),
+      }
+    ).then(
+      res => res.json()
+    ).then(
+      json => render(json)
+    );
+  }
+  // listeners
   letterInput.addEventListener(
     'input',
     event => {
-      while (suggestionEl.firstChild) {
-          suggestionEl.firstChild.remove();
-      }
-      const text = letterInput.value;
-      if (text !== "") {
-        fetch(
-          '/search',
-          {
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            method: 'POST',
-            credentials: 'same-origin',
-            body: JSON.stringify({ text }),
-          }
-        ).then(
-          res => res.json()
-        ).then(
-          json => render(json)
-        );
-      }
+      get_results();
     }
   )
+  songInput.addEventListener(
+    'change',
+    event => {
+      const song = songInput.value;
+      console.log(song);
+      fetch(
+        '/song',
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          method: 'POST',
+          credentials: 'same-origin',
+          body: JSON.stringify({ song }),
+        }
+      )
+      get_results();
+    }
+  )
+  // on page load
+  get_results();
 </script>
