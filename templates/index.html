@@ -1,5 +1,17 @@
 <input id="search" type="text" required="true" placeholder="Search" autofocus>
+<label for="add-song">Add song(format: artist - song name):</label>
 <input id="add-song" type="text" required="true" placeholder="Add song">
+<br>
+<select id="instrument">
+  <option value="all instruments">All instruments</option>
+  <option value="guitar">Guitar</option>
+  <option value="bass">Bass</option>
+</select>
+<label for="licensed">Licensed</label>
+<select id="licensed">
+  <option value="true">True</option>  
+  <option value="false">False</option>
+</select>
 <div id="suggestions"></div>
 
 <script type="text/javascript">
@@ -7,6 +19,8 @@
   const letterInput = document.querySelector("input#search");
   const songInput = document.querySelector("input#add-song");
   const suggestionEl = document.querySelector("div#suggestions");
+  const instrumentEl = document.querySelector("select#instrument");
+  const licensedEl = document.querySelector("select#licensed");
   // helpers
   function render(list) {
     list.forEach(
@@ -22,6 +36,9 @@
         suggestionEl.firstChild.remove();
     }
     const query = letterInput.value;
+    const licensed = licensedEl.value;
+    const instrument = instrumentEl.value;
+
     fetch(
       '/search',
       {
@@ -31,7 +48,7 @@
         },
         method: 'POST',
         credentials: 'same-origin',
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({query, instrument, licensed}),
       }
     ).then(
       res => res.json()
@@ -63,6 +80,18 @@
           body: JSON.stringify({ song }),
         }
       )
+      get_results();
+    }
+  )
+  instrumentEl.addEventListener(
+    'change',
+    event => {
+      get_results();
+    }
+  )
+  licensedEl.addEventListener(
+    'change',
+    event => {
       get_results();
     }
   )

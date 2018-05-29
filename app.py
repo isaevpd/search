@@ -57,58 +57,75 @@ def add_song():
 @app.route('/search', methods=['POST'])
 def search():
     query = request.json['query']
-    response = requests.post(
-        'http://localhost:9200/exercises/exercise/_search',
-        json={
-            "query": {
-                "bool": {
-                    # "must": {
-                    #     "match": {
-                    #         "instrument": "guitar"
+    instrument = request.json['instrument']
+    licensed = {
+        'true': True,
+        'false': False
+    }[request.json['licensed']]
+
+    es_filter = [
+        {"term": {"licensed": licensed}}
+    ]
+    if instrument != 'all instruments':
+        es_filter.append(
+            {"term": {"instrument": instrument}}
+        )
+    es_query = {
+        "min_score": 0.5,
+        "query": {
+            "bool": {
+                "should": [
+                    # {
+                    #     "multi_match": {
+                    #         "query": query,
+                    #         "type": "best_fields",
+                    #         "fields": ["artist", "song_title"],
+                    #         "fuzziness": "AUTO",
+                    #         "analyzer": "english"
                     #     }
                     # },
-                    "should": [
-                        # {
-                        #     "multi_match": {
-                        #         "query": query,
-                        #         "type": "best_fields",
-                        #         "fields": ["artist", "song_title"],
-                        #         "fuzziness": "AUTO",
-                        #         "analyzer": "english"
-                        #     }
-                        # },
-                        {
-                            "match": {
-                                "artist": {
-                                    "query": query,
-                                    "fuzziness": "AUTO",
-                                    "analyzer": "english"
-                                }
-                            }
-                        },
-                        {
-                            "match": {
-                                "song_title": {
-                                    "query": query,
-                                    "fuzziness": "AUTO",
-                                    "analyzer": "english",
-                                }
-                            }
-                        },
-                        {"match_phrase_prefix": {"artist": query}},
-                        {
-                            "match_phrase_prefix": {
-                                "song_title": {
-                                    "query": query
-                                }
+                    {
+                        "match": {
+                            "artist": {
+                                "query": query,
+                                "fuzziness": "AUTO",
+                                "analyzer": "english"
+                            },
+                        }
+                    },
+                    {
+                        "match": {
+                            "song_title": {
+                                "query": query,
+                                "fuzziness": "AUTO",
+                                "analyzer": "english",
                             }
                         }
-                    ]
-                }
-            },
-            "size": 50,
-        }
+                    },
+                    {"match_phrase_prefix": {"artist": query}},
+                    {
+                        "match_phrase_prefix": {
+                            "song_title": {
+                                "query": query
+                            }
+                        }
+                    }
+                ],
+                # "filter": {
+                #     "bool": {
+                #         "must": es_filter
+                #     }
+                # }
+                "filter": es_filter
+            }
+        },
+        "size": 50,
+    }
+    response = requests.post(
+        'http://localhost:9200/exercises/exercise/_search',
+        json=es_query
     )
+
     songs = format_songs(response)
     if not songs:
         # response = requests.get(
